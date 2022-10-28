@@ -26,12 +26,14 @@ def new_message(message):
     print(message)
     jsonObj = json.loads(message)
 
-    data = (jsonObj.get('user_id'), request.sid, jsonObj.get('msg'))
+    data = (jsonObj.get('user_id'), request.sid, jsonObj.get('msg'), jsonObj.get('user_name'))
     db = connect_db()
-    db.execute('INSERT INTO ChatRecord(user_id, sid, msg) VALUES (?,?,?)',
-               data)
+    cursor = db.cursor()
+    cursor.execute('INSERT INTO ChatRecord(user_id, sid, msg, user_name) VALUES (?,?,?,?)',
+                   data)
+    jsonObj['id'] = cursor.lastrowid
     db.commit()
-    emit('send_broadcast', message, broadcast=True, namespace='/chat_room')
+    emit('send_broadcast', json.dumps(jsonObj), broadcast=True, namespace='/chat_room')
 
 
 @socket_io.on('xxxx', namespace='/chat_room')
@@ -45,6 +47,20 @@ def history_list():
     db.row_factory = dict_factory
     cursor = db.execute('select * from ChatRecord')
     return json.dumps(cursor.fetchall())
+
+
+@app.route('/unread', methods=['GET'])
+def unread_count():
+    split = request.args.get('last_read_id').split('_')
+    db = connect_db()
+    db.row_factory = dict_factory
+
+    if len(split) == 1:
+        cursor = db.execute('select count(id) as count from ChatRecord where ID > ?', (split[0],))
+    else:
+        cursor = db.execute('select count(id) as count from ChatRecord where ID >= ?', (split[0],))
+
+    return str(cursor.fetchone()['count'])
 
 
 initdb()

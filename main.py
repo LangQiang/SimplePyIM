@@ -3,6 +3,9 @@ from flask import request
 from flask_socketio import SocketIO, emit
 from db_init import *
 import json
+from redis_utils import Redis
+from datetime import datetime
+
 
 port = 8001
 app = Flask(__name__)
@@ -11,7 +14,11 @@ socket_io = SocketIO(app)
 
 @socket_io.on('connect', namespace='/chat_room')
 def test_connect():
-    print("connect" + str(request.sid))
+    print("connect:  sid:" + str(request.sid) + "    args:" + str(request.args))
+    accountInfo = Redis.read(request.args.get('token'))
+    if accountInfo is None:
+        return False
+    print(accountInfo)
     emit('connect_response', {'ret': 'success', 'sid': request.sid}, to=request.sid, namespace='/chat')
 
 
@@ -25,15 +32,22 @@ def on_disconnect():
 def new_message(message):
     print(message)
     jsonObj = json.loads(message)
-
-    data = (jsonObj.get('user_id'), request.sid, jsonObj.get('msg'), jsonObj.get('user_name'))
+    token = jsonObj.get('token')
+    accountInfo = json.loads(Redis.read(token))
+    if accountInfo is None:
+        return False
+    data = (accountInfo.get('user_id'), request.sid, jsonObj.get('msg'), accountInfo.get('nick_name'), accountInfo.get('user_avatar'), jsonObj.get('msg_type', 0))
     db = connect_db()
     cursor = db.cursor()
-    cursor.execute('INSERT INTO ChatRecord(user_id, sid, msg, user_name) VALUES (?,?,?,?)',
+    cursor.execute('INSERT INTO ChatRecord(user_id, sid, msg, nick_name, user_avatar, msg_type) VALUES (?,?,?,?,?,?)',
                    data)
-    jsonObj['id'] = cursor.lastrowid
+    accountInfo['id'] = cursor.lastrowid
+    accountInfo['msg'] = jsonObj.get('msg')
+    accountInfo['sid'] = request.sid
+    accountInfo['created_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    accountInfo['msg_type'] = jsonObj.get('msg_type', 0)
     db.commit()
-    emit('send_broadcast', json.dumps(jsonObj), broadcast=True, namespace='/chat_room')
+    emit('send_broadcast', json.dumps(accountInfo), broadcast=True, namespace='/chat_room')
 
 
 @socket_io.on('xxxx', namespace='/chat_room')

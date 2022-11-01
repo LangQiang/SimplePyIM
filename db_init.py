@@ -12,9 +12,11 @@ def initdb():
     connect_db().execute('''CREATE TABLE if not exists ChatRecord(
         ID integer PRIMARY KEY AUTOINCREMENT,
         user_id VARCHAR(20),
-        user_name VARCHAR(20),
+        nick_name VARCHAR(20),
         sid VARCHAR(20),
         msg TEXT,
+        user_avatar TEXT,
+        msg_type INTEGER,
         created_time TimeStamp NOT NULL DEFAULT (DATETIME('now', 'localtime'))
         )''')
 

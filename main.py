@@ -36,16 +36,24 @@ def new_message(message):
     accountInfo = json.loads(Redis.read(token))
     if accountInfo is None:
         return False
-    data = (accountInfo.get('user_id'), request.sid, jsonObj.get('msg'), accountInfo.get('nick_name'), accountInfo.get('user_avatar'), jsonObj.get('msg_type', 0))
+    data = (accountInfo.get('user_id'),
+            request.sid, jsonObj.get('msg'),
+            accountInfo.get('nick_name'),
+            accountInfo.get('user_avatar'),
+            jsonObj.get('msg_type', 0),
+            jsonObj.get('pic_width', 0),
+            jsonObj.get('pic_height', 0))
     db = connect_db()
     cursor = db.cursor()
-    cursor.execute('INSERT INTO ChatRecord(user_id, sid, msg, nick_name, user_avatar, msg_type) VALUES (?,?,?,?,?,?)',
+    cursor.execute('INSERT INTO ChatRecord(user_id, sid, msg, nick_name, user_avatar, msg_type, pic_width, pic_height) VALUES (?,?,?,?,?,?,?,?)',
                    data)
     accountInfo['id'] = cursor.lastrowid
     accountInfo['msg'] = jsonObj.get('msg')
     accountInfo['sid'] = request.sid
     accountInfo['created_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     accountInfo['msg_type'] = jsonObj.get('msg_type', 0)
+    accountInfo['pic_width'] = jsonObj.get('pic_width', 0)
+    accountInfo['pic_height'] = jsonObj.get('pic_height', 0)
     db.commit()
     emit('send_broadcast', json.dumps(accountInfo), broadcast=True, namespace='/chat_room')
 

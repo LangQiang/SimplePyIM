@@ -2,7 +2,8 @@ __all__ = ['Redis']
 
 import redis
 
-g_host = "10.0.16.9"  # redis数据库地址
+# g_host = "10.0.16.9"  # redis数据库地址
+g_host = "10.0.8.4"  # redis数据库地址
 # g_host = "127.0.0.1"  # redis数据库地址
 g_port = 6379  # redis 端口号
 g_db = 0  # 数据库名

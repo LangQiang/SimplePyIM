@@ -17,6 +17,8 @@ def initdb():
         msg TEXT,
         user_avatar TEXT,
         msg_type INTEGER,
+        pic_width INTEGER, 
+        pic_height INTEGER,
         created_time TimeStamp NOT NULL DEFAULT (DATETIME('now', 'localtime'))
         )''')
 
